@@ -1,3 +1,16 @@
+#'
+#' Convert a dataset of points into a sparse matrix, for faster downstream computations
+#'
+#' @field id character ID of point
+#' @field country character Country of point, if available
+#' @field valid logical Is point valid or redundant?
+#' @field mat Matrix Sparse matrix with 100 m resolution at the equator
+#' @field nlat Number of latitude cells that go from 90N to 90S
+#' @field nlon Number of longitude cells that go from 180W to 180E
+#' @field idx numeric Total number of valid IDs
+#' @field delta numeric Meridional spatial resolution, in degrees
+#' @field verbose Output progress to console
+#'
 points2MatrixClass <- setRefClass(
 
   Class = 'points2MatrixClass',
@@ -9,14 +22,16 @@ points2MatrixClass <- setRefClass(
                 nlon = "numeric",
                 nlat = "numeric",
                 idx = 'numeric',
-                delta = 'numeric'),
+                delta = 'numeric',
+                verbose = 'logical'),
 
   methods = list(
 
-    initialize = function(earthGeo, points, latName = 'lat', lonName = 'lon', id = 's2id', country = NULL) {
+    initialize = function(earthGeo, points, latName = 'lat', lonName = 'lon', id = 's2id', country = NULL, verbose = TRUE) {
 
       .self$nlon = earthGeo$nlon
       .self$nlat = earthGeo$nlat
+      .self$verbose = verbose
       
       .self$id = points[[id]]
       if (!is.null(country)) {
@@ -31,7 +46,7 @@ points2MatrixClass <- setRefClass(
       .self$idx = 1
       
       mapply(1:n, FUN = function(i) {
-        if (i %% 10000 == 0) print(paste0(i, " out of ", n, " done."))
+        if (i %% 10000 == 0 && .self$verbose) print(paste0(i, " out of ", n, " done."))
         mylat = lat[i]
         mylon = lon[i]
         crd = .self$getLatLonIdx(mylat, mylon)
@@ -44,6 +59,9 @@ points2MatrixClass <- setRefClass(
       .self$id = .self$id[.self$valid]
     },
 
+    #
+    # Obtain row and column indices, for a given (lat, lon) pair
+    #
     getLatLonIdx = function(mylat, mylon) {
       rr = min(.self$nlat, max(1, round((90 - mylat) / .self$delta)))
       cc = min(.self$nlon, max(1, round((mylon + 180) / .self$delta)))
@@ -52,6 +70,3 @@ points2MatrixClass <- setRefClass(
   )
 
 )
-
-#eg = earthGeoClass()
-#an = anchorages2MatrixClass("~/Documents/fishackathon/unnamed_anchorages_csv/unnamed_anchorages_20171120.csv", eg$lon, eg$lat)
