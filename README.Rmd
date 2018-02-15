@@ -1,0 +1,85 @@
+---
+title: "Model to build the Ports database"
+author: "Ricardo Lemos"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Model to build the Ports database}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+library(portsModel)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## 1. Introduction
+
+Package `portsModel` was built during the 2018 Fishackathon, to address Challenge #9 ("Ports"). In short,
+we were challenged to
+
+- cluster anchorages (i.e., sites where >20 distinct vessels tend to hang out for more than 48h) into ports, using an algorithm that respects the fact that the Earth is an oblate spheroid;
+- summarize the types of vessels that frequent the port, or use this information to design the port;
+- name the port, based on the World Port Index database and the Geonames1000 database (a global database of cities and villages with more than 1000 habitants);
+- develop tools to visualize the data and promote collaborative enhancement of this novel port database.
+
+## 2. Approach
+
+### 2.1. EarthGeo
+
+`EarthGeo` is a handy object that helps us know how many cells we are going to need to cover the globe with a grid whose cells
+have 100m in meridional (i.e., latitudinal) resolution, and also 100m zonal (longitudinal) resolution at the equator. As we go poleward, the zonal resolution increases, meaning that we have to traverse more cells to cover the same 100m. For convenience, we place an upper limit of 5 on the number of cells traversed. This should not pose issues, since few ports exist beyond parallel 66 -- the Arctic and Antarctic circles.
+
+```{r, cache = FALSE, fig.width=6}
+earthGeo = earthGeoClass()
+plot(earthGeo$lat, mapply(earthGeo$lat, FUN = earthGeo$deltaLon), xlab = 'latitude', ylab = 'nTraverse', xaxp  = c(-90, 90, 6))
+```
+
+### 2.2. Placing anchorages, world ports, and cities in large, sparse matrices
+
+Here we employ `unnamed_anchorages_20171120`, which is a dataset of anchorages provided by GFW for the 2018 Fishackathon. This dataset contains the latitudes, longitudes, and Google-S2 ID code of 102,974 anchorages, defined by Global Fishing Watch. We also use a database of ports -- 
+the [World Port Index](https://msi.nga.mil/MSISiteContent/StaticFiles/NAV_PUBS/WPI/WPI_Shapefile.zip) --, which is a tabular listing of thousands of ports throughout the world, describing their location, characteristics, known facilities, and available services. Lastly, we use `cities1000.zip`, which is a 
+[GeoNames Gazetteer dataset](http://download.geonames.org/export/dump/readme.txt) that provides all cities in the world with more that 1000 habitants.
+
+With the object `anchorages`, we place each anchorage in one cell of a sparse matrix with ~200k rows and ~400k columns that represents the globe, on a ~0.001 degree resolution. This procedure results in the loss of 87 anchorages (0.08%) due to superposition, a number that we find acceptable.
+
+```{r, cache = TRUE}
+anchorages = points2MatrixClass(earthGeo, unnamed_anchorages_20171120, 'lat', 'lon', 's2id', NULL)
+wpi = points2MatrixClass(earthGeo, wpiDB, 'LATITUDE', 'LONGITUDE', 'PORT_NAME', 'COUNTRY')
+cities1000 = points2MatrixClass(earthGeo, citiesDB, 'latitude', 'longitude', 'name', 'country')
+```
+
+### 2.3. Clustering
+
+Now that the anchorages are gridded, we can employ a clustering algorithm: two anchorages belong to the same port if they are within 4 km in latitude and 4 km in longitude of each other. The algorithm may take a few minutes to run. Close to 7 thousand clusters are identified.
+
+```{r, cache = TRUE}
+clusters = clustersClass(earthGeo, anchorages)
+clusters$id
+```
+
+### 2.4. Polygons
+
+Let us now take each cluster and construct a port. A "port" is going to be a convex hull, or polygon, that encompasses all the anchorages in a cluster. This definition doesn't give us a real, physical port, but it is our best approximation based on AIS data alone. Below we plot the centroids of the ~7k ports, as well as the anchorages and convex hull of port #1.
+
+```{r, cache = TRUE}
+polygons = polygonsClass(clusters)
+plot(polygons$centroids)
+plot(polygons$allPolygons[[1]]$x, polygons$allPolygons[[1]]$y, type = 'b', xlab = 'lon', ylab = 'lat')
+```
+
+
+### 2.5. Ports
+
+Now we need to associate each polygon with a WPI port name and a city name. Also, to characterize the types of vessels that use a port, we employ the dataset 
+`anchTypes`, provided by GFW during Fishackathon 2018.
+
+```{r, cache = TRUE}
+ports = portsClass(polygons, wpi, cities1000, anchTypes)
+```
+
+

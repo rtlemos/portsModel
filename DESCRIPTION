@@ -1,0 +1,20 @@
+Package: portsModel
+Type: Package
+Title: 2018 Fishackathon Challenge 9 code
+Version: 0.1.0
+Author: Ricardo Lemos
+Maintainer: The package maintainer <rtl00@yahoo.com>
+Description: This is part of our solution to the Fishackathon 2018 Ports Challenge: how to cluster anchorages into ports, use vessel type information, allow users to edit polygons, etc.
+License: APACHE-2.0
+Encoding: UTF-8
+LazyData: true
+Depends:
+  Matrix,
+  data.table,
+  tripack,
+  googleway,
+  shiny,
+  rsconnect
+Suggests: knitr,
+    rmarkdown
+VignetteBuilder: knitr
