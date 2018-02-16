@@ -33,8 +33,8 @@ polygonsClass <- setRefClass(
     # Algorithm that constructs polygons (outer loop)
     #
     polyAll = function() {
-      .self$allPolygons = lapply(1:.self$clusters$id, FUN = function(i) {
-        if (i %% 1000 == 0 && .self$verbose) print(paste0(i, " out of ", .self$clusters$id, " done."))
+      .self$allPolygons = lapply(1:.self$clusters$nClust, FUN = function(i) {
+        if (i %% 1000 == 0 && .self$verbose) print(paste0(i, " out of ", .self$clusters$nClust, " done."))
         .self$polyOne(i)
       })
       .self$allPolygons[sapply(.self$allPolygons, is.null)] <- NULL

@@ -37,7 +37,7 @@ portsClass <- setRefClass(
   
   methods = list(
     
-    initialize = function(polygons, wpi, cities1000, anchorageTypes, autobuild = FALSE, verbose = TRUE) {
+    initialize = function(polygons, wpi, cities1000, anchorageTypes, autobuild = TRUE, verbose = TRUE) {
       .self$polygons = polygons
       .self$clusters = polygons$clusters
       .self$earthGeo = .self$clusters$earthGeo
@@ -47,8 +47,8 @@ portsClass <- setRefClass(
       .self$verbose = verbose
         
       if (autobuild) {
-        .self$nearestWPI = .self$getAllNearest(wpi)
-        .self$nearestCity = .self$getAllNearest(cities1000)
+        .self$nearestWPI = .self$getAllNearest(wpi, 1)
+        .self$nearestCity = .self$getAllNearest(cities1000, 2)
         .self$country = .self$getCountry()
         
         .self$uniqueTypes = unique(anchorageTypes$gear_type)
@@ -82,12 +82,9 @@ portsClass <- setRefClass(
     #
     # Given an object sparseObj of class points2MatrixClass, obtain, for each port, the index of the nearest point in sparseObj and the distance
     #
-    getAllNearest = function(sparseObj) {
+    getAllNearest = function(sparseObj, part) {
       n = nrow(.self$polygons$centroids)
-      if (.self$verbose) {
-        cl = sparseObj$getClass()
-        print(paste0('getAllNearest(', cl@className[1], ')'))
-      }
+      if (.self$verbose) print(paste0('Mapping, part ', part))
       raw = t(mapply(1:n, FUN = function(i) {
         if (i %% 1000 == 0 && .self$verbose) print(paste0(i, " out of ", n, " done."))
         .self$getOneNearest(sparseObj, i)
@@ -140,8 +137,8 @@ portsClass <- setRefClass(
     #
     setTables = function() {
       if (.self$verbose) print('Constructing vessel type table')
-      .self$counts = t(mapply(1:.self$clusters$id, FUN = function(i) {
-        if (i %% 1000 == 0 && .self$verbose) print(paste0(i, " out of ", .self$clusters$id, " done."))
+      .self$counts = t(mapply(1:.self$clusters$nClust, FUN = function(i) {
+        if (i %% 1000 == 0 && .self$verbose) print(paste0(i, " out of ", .self$clusters$nClust, " done."))
         setOneTable(i)
       }))
       colnames(.self$counts) = .self$uniqueTypes
