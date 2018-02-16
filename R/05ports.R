@@ -24,8 +24,8 @@ portsClass <- setRefClass(
     clusters = 'ANY',
     anchorages = 'ANY',
     earthGeo = 'ANY',
-    wpi = 'ANY',
-    cities1000 = 'ANY',
+    wpi = 'data.frame',
+    cities1000 = 'data.frame',
     uniqueTypes = 'character',
     types = 'list',
     country = 'character',
@@ -37,13 +37,13 @@ portsClass <- setRefClass(
   
   methods = list(
     
-    initialize = function(polygons, wpi, cities1000, anchorageTypes, autobuild = TRUE, verbose = TRUE) {
+    initialize = function(polygons, wpi, wpiDB, cities1000, citiesDB, anchorageTypes, autobuild = TRUE, verbose = TRUE) {
       .self$polygons = polygons
       .self$clusters = polygons$clusters
       .self$earthGeo = .self$clusters$earthGeo
       .self$anchorages = .self$clusters$anchorages
-      .self$wpi = wpi # to read original WPI shapefile, use readOGR(dsn = "/.../WPI_Shapefile/WPI.shp")
-      .self$cities1000 = cities1000
+      .self$wpi = wpiDB # to read original WPI shapefile, use readOGR(dsn = "/.../WPI_Shapefile/WPI.shp")
+      .self$cities1000 = citiesDB
       .self$verbose = verbose
         
       if (autobuild) {
@@ -64,11 +64,12 @@ portsClass <- setRefClass(
       lapply(1:length(polygons$allPolygons), FUN = function(i) {
         myPoly = .self$polygons$allPolygons[[i]]
         myCentroid = .self$polygons$centroids[i,]
+        myCountry = .self$country[i]
         myCounts = .self$counts[i,]
         myWPI = as.numeric(.self$nearestWPI[i, ])
         myCity = as.numeric(.self$nearestCity[i, ])
-        list(lon = myPoly$x, lat = myPoly$y, centroidLon = myCentroid$lon, centroidLat = myCentroid$lat, counts = myCounts, 
-             wpi = .self$wpi[myWPI[1]], wpiDistance = myWPI[2], city = .self$cities100[myCity[1]], cityDistance = myCity[2])
+        list(lon = myPoly$x, lat = myPoly$y, centroidLon = myCentroid$lon, centroidLat = myCentroid$lat, country = myCountry, counts = myCounts, 
+             wpi = .self$wpi[myWPI[1],], wpiDistance = myWPI[2], city = .self$cities1000[myCity[1],], cityDistance = myCity[2])
       })
     },
     

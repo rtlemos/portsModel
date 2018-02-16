@@ -70,7 +70,7 @@ Now we need to associate each polygon with a WPI port name and a city name. Also
 for further analysis and plotting (see package `shinyPorts`).
 
 ```{r, cache = TRUE}
-ports = portsClass(polygons, wpi, cities1000, anchTypes, verbose = FALSE)
+ports = portsClass(polygons, wpi, wpiDB, cities1000, citiesDB, anchTypes, verbose = FALSE)
 ports$getData()
 ```
 
