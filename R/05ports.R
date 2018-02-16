@@ -37,7 +37,6 @@ portsClass <- setRefClass(
   
   methods = list(
     
-    
     initialize = function(polygons, wpi, cities1000, anchorageTypes, autobuild = FALSE, verbose = TRUE) {
       .self$polygons = polygons
       .self$clusters = polygons$clusters
@@ -58,16 +57,31 @@ portsClass <- setRefClass(
       }
     },
     
-    #'
-    #' Populate the country field
-    #' 
+    #
+    # Retrieve port data
+    #
+    getData = function() {
+      lapply(1:length(polygons$allPolygons), FUN = function(i) {
+        myPoly = .self$polygons$allPolygons[[i]]
+        myCentroid = .self$polygons$centroids[i,]
+        myCounts = .self$counts[i,]
+        myWPI = as.numeric(.self$nearestWPI[i, ])
+        myCity = as.numeric(.self$nearestCity[i, ])
+        list(lon = myPoly$x, lat = myPoly$y, centroidLon = myCentroid$lon, centroidLat = myCentroid$lat, counts = myCounts, 
+             wpi = .self$wpi[myWPI[1]], wpiDistance = myWPI[2], city = .self$cities100[myCity[1]], cityDistance = myCity[2])
+      })
+    },
+    
+    #
+    # Populate the country field
+    # 
     getCountry = function() {
       mapply(.self$nearestCity[,1], FUN = function(id) .self$cities1000$country[id])
     },
     
-    #'
-    #' Given an object sparseObj of class points2MatrixClass, obtain, for each port, the index of the nearest point in sparseObj and the distance
-    #'
+    #
+    # Given an object sparseObj of class points2MatrixClass, obtain, for each port, the index of the nearest point in sparseObj and the distance
+    #
     getAllNearest = function(sparseObj) {
       n = nrow(.self$polygons$centroids)
       if (.self$verbose) {
@@ -81,9 +95,9 @@ portsClass <- setRefClass(
       data.frame(index = raw[,1], distance = raw[,2])
     },
     
-    #'
-    #' Inner loop of function getAllNearest (computations for a single port)
-    #' 
+    #
+    # Inner loop of function getAllNearest (computations for a single port)
+    # 
     getOneNearest = function(sparseObj, i) {
       crds = as.numeric(.self$polygons$centroids[i, ])
       rc = sparseObj$getLatLonIdx(mylat = crds[2], mylon = crds[1])
