@@ -52,7 +52,7 @@ points2MatrixClass <- setRefClass(
         crd = .self$getLatLonIdx(mylat, mylon)
         .self$valid[i] = (.self$mat[crd[1], crd[2]] == 0)
         if (.self$valid[i]) {
-          .self$mat[crd[1], crd[2]] = .self$idx
+          .self$mat[crd[1], crd[2]] = i
           .self$idx = .self$idx + 1
         }
       })

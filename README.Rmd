@@ -67,7 +67,7 @@ plot(polygons$allPolygons[[1]]$x, polygons$allPolygons[[1]]$y, type = 'b', xlab 
 
 Now we need to associate each polygon with a WPI port name and a city name. Also, to characterize the types of vessels that use a port, we employ the dataset 
 `anchTypes`, provided by GFW during Fishackathon 2018. The method `getData` lets us put all the relevant output produced up to here in a convenient list,
-for further analysis and plotting (see package `shinyPorts`).
+for further analysis and plotting (see package [shinyPorts](https://github.com/rtlemos/shinyPorts)).
 
 ```{r, cache = TRUE}
 ports = portsClass(polygons, wpi, wpiDB, cities1000, citiesDB, anchTypes, verbose = FALSE)
